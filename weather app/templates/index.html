@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Weather App</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>🌤️ Weather App</h1>
+
+    <p id="time"></p>
+
+    <!-- Search -->
+    <form method="POST" action="/" onsubmit="showLoading()">
+        <input type="text" name="city" placeholder="Enter cities (Pune, Mumbai)" required>
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- Buttons -->
+    <div>
+        <button type="button" onclick="getLocation()">📍 Location</button>
+        <button type="button" onclick="toggleMode()">🌙 Dark Mode</button>
+    </div>
+
+    <p id="loading" style="display:none;">Loading...</p>
+
+    {% if cities_weather %}
+
+        {% for city in cities_weather %}
+
+        <!-- 🌤️ Current Weather -->
+        <div class="weather-box">
+            <h2>{{ city.city }}</h2>
+
+            {% if city.icon %}
+            <img src="https://openweathermap.org/img/wn/{{ city.icon }}@2x.png" alt="icon">
+            {% endif %}
+
+            <p>🌡️ {{ city.temperature }}°C</p>
+            <p>💧 {{ city.humidity }}%</p>
+            <p>{{ city.description }}</p>
+        </div>
+
+        <!-- 📆 Forecast -->
+        <h3>5-Day Forecast</h3>
+
+        <div class="forecast">
+            {% for day in city.forecast %}
+            <div class="card">
+                <p>{{ day.day }}</p>
+
+                {% if day.icon %}
+                <img src="https://openweathermap.org/img/wn/{{ day.icon }}@2x.png" alt="icon">
+                {% else %}
+                <img src="https://openweathermap.org/img/wn/01d@2x.png" alt="default">
+                {% endif %}
+
+                <p>{{ day.temp }}°C</p>
+                <p>{{ day.desc }}</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- 📊 Chart -->
+        <div class="chart-box">
+            <canvas id="chart-{{ loop.index }}"></canvas>
+        </div>
+
+        <script>
+            const labels = {{ city.forecast | map(attribute='day') | list | tojson }};
+            const temps = {{ city.forecast | map(attribute='temp') | list | tojson }};
+
+            const ctx = document.getElementById("chart-{{ loop.index }}").getContext("2d");
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: temps,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        </script>
+
+        {% endfor %}
+
+    {% else %}
+        <p style="color:red;">No data found ❌</p>
+    {% endif %}
+
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
